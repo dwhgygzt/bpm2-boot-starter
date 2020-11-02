@@ -1,0 +1,152 @@
+.dialog-style {
+  .el-dialog__body {
+    height: calc(100vh - 120px);
+    padding: 0;
+  }
+}
+.el-dialog__wrapper {
+  overflow: hidden;
+}
+
+.form-write-dialog {
+  .el-dialog__header {
+    height: 50px;
+    line-height: 50px;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    .el-dialog__title {
+      padding-left: 20px;
+      font-size: 16px;
+    }
+  }
+  .el-dialog__headerbtn {
+    top: 15px;
+  }
+  .el-dialog__body {
+    height: calc(100vh - 120px);
+    padding: 0;
+  }
+  .el-dialog__footer {
+    padding: 0;
+    text-align: center;
+  }
+}
+
+
+.form-wxNews-dialog {
+  *, *:before, *:after {
+    -webkit-box-sizing: unset;
+    box-sizing: unset;
+  }
+  .el-dialog__header {
+    height: 50px;
+    line-height: 50px;
+    padding: 0;
+    margin: 0;
+    .el-dialog__title {
+      padding-left: 20px;
+      font-size: 16px;
+    }
+  }
+  .el-dialog__headerbtn {
+    top: 15px;
+  }
+  .el-dialog__body {
+    height: calc(100vh - 100px);
+    padding: 0;
+    .el-tabs__content {
+      overflow: auto;
+    }
+    .el-divider {
+      margin: 0;
+      padding: 0;
+    }
+    box-sizing: unset;
+    -webkit-box-sizing: unset;
+    .edui-editor-iframeholder {
+      height: calc(100vh - 280px);
+    }
+    .edui-gray .edui-editor {
+      border-top: none;
+    }
+    .el-form-item__label{
+      padding: 0;
+      font-weight: 400;
+    }
+    .el-form-item {
+      margin: 0;
+      padding-bottom: 5px;
+    }
+    .el-input__inner {
+      padding-left: 10px;
+    }
+    .el-textarea__inner {
+      padding-left: 10px;
+    }
+  }
+  .el-dialog__footer {
+    padding: 0;
+    text-align: center;
+  }
+}
+
+.image-view-dialog {
+  .el-dialog__header {
+    height: 60px;
+    line-height: 60px;
+    padding: 0;
+    margin: 0;
+    .el-dialog__title {
+      padding-left: 10px;
+      font-size: 16px;
+    }
+  }
+  .el-dialog__headerbtn {
+    top: 15px;
+  }
+  .el-dialog__body {
+    padding: 0 10px;
+    //height: calc(100vh - 200px);
+    height: 30rem;
+    .el-divider {
+      margin: 0;
+      padding: 0;
+    }
+  }
+  .el-dialog__footer {
+    padding: 10px 10px;
+  }
+}
+
+.message-dialog {
+  .el-dialog__header {
+    height: 60px;
+    line-height: 60px;
+    padding: 0;
+    margin: 0;
+    .el-dialog__title {
+      padding-left: 15px;
+      font-size: 16px;
+    }
+  }
+  .el-dialog__headerbtn {
+    top: 15px;
+  }
+  .el-dialog__body {
+    padding: 0 20px;
+    .el-divider {
+      margin: 0;
+      padding: 0;
+    }
+  }
+  .el-dialog__footer {
+    padding: 10px 10px;
+  }
+}
+
+.flow-design-dialog {
+
+}
+
+
