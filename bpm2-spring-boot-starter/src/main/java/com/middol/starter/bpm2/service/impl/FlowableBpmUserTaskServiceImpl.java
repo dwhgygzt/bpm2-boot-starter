@@ -155,16 +155,25 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
     private List<BpmTaskEntity> convertBpmTaskEntity(List<Task> taskList) {
         List<BpmTaskEntity> result = new ArrayList<>(8);
         if (!CollectionUtils.isEmpty(taskList)) {
-            Map<String, UserTask> allUserTaskMap = getAllUserTaskMap(taskList.get(0).getProcessDefinitionId());
-
-            taskList.forEach(item -> {
-                BpmTaskEntity entity = new BpmTaskEntity();
-                getTaskInfoToBpmTaskEntity(entity, item, allUserTaskMap);
-                result.add(entity);
-            });
+            Map<String, Map<String, UserTask>> allProcessUserTaskMap = new HashMap<>(8);
+            for (Task item : taskList) {
+                setItemToBpmTaskEntityList(result, item, allProcessUserTaskMap);
+            }
         }
 
         return result;
+    }
+
+    private void setItemToBpmTaskEntityList(List<BpmTaskEntity> result, TaskInfo taskInfo, Map<String, Map<String, UserTask>> allProcessUserTaskMap) {
+        Map<String, UserTask> allUserTaskMap = allProcessUserTaskMap.get(taskInfo.getProcessDefinitionId());
+        if (allUserTaskMap == null) {
+            allUserTaskMap = getAllUserTaskMap(taskInfo.getProcessDefinitionId());
+            allProcessUserTaskMap.put(taskInfo.getProcessDefinitionId(), allUserTaskMap);
+        }
+
+        BpmTaskEntity entity = new BpmTaskEntity();
+        getTaskInfoToBpmTaskEntity(entity, taskInfo, allUserTaskMap);
+        result.add(entity);
     }
 
     @SuppressWarnings("unchecked")
@@ -406,14 +415,10 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
     private List<BpmTaskEntity> convertBpmHisTaskEntity(List<HistoricTaskInstance> taskList) {
         List<BpmTaskEntity> result = new ArrayList<>(8);
         if (!CollectionUtils.isEmpty(taskList)) {
-            Map<String, UserTask> allUserTaskMap = getAllUserTaskMap(taskList.get(0).getProcessDefinitionId());
-
-            taskList.forEach(item -> {
-                BpmTaskEntity entity = new BpmTaskEntity();
-                getTaskInfoToBpmTaskEntity(entity, item, allUserTaskMap);
-                entity.setEndTime(item.getEndTime());
-                result.add(entity);
-            });
+            Map<String, Map<String, UserTask>> allProcessUserTaskMap = new HashMap<>(8);
+            for (HistoricTaskInstance item : taskList) {
+                setItemToBpmTaskEntityList(result, item, allProcessUserTaskMap);
+            }
         }
 
         return result;

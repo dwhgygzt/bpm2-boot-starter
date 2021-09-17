@@ -15,7 +15,7 @@ public class BpmTaskQuery extends BpmBasePageQuery {
 
 
     /**
-     * 【必填字段】按照流程实例id查询
+     * 按照流程实例id查询
      */
     private String processInstanceId;
 
