@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.middol.starter.bpm2.config.Bpm2AutoConfig
+  com.guzt.starter.bpm2.config.Bpm2AutoConfig

@@ -1,79 +1,3 @@
-## 简介
-
-公司开发业务中很多关于工作流的场景，因此开发本starter用于统一和简化开发人员的工作量，本starter基于
-flowable 6.4.2 进行开发封装。
-
-flowable 6.4.2 本身具有spring-boot-starter 为什么还要进行封装？ 
-主要考虑到最低限度的依赖引入，另外将公共接口抽出有利于升级或变更流程引擎。
-
-flowable 6.5.0 开始部分功能已经商业化了，为了稳妥起见，因此暂选用flowable 6.4.2
-
-## 特点
-- 封装整理了常用的流程操作接口（查看流程定义、启动流程）
-- 封装整理常用的任务操作接口（提交、跳转、驳回到并行网关中的某几条分支）
-- 暂时未支持子流程，由于日常开发很少用到这块功能
-
-## 用法
-1. pom.xml 文件引入如下配置
-
-```xml
-<!-- 对象存储通用接口 -->
-<dependency>
-    <groupId>com.guztcom.guzt</groupId>
-    <artifactId>bpm2-spring-boot-starter</artifactId>
-    <version>最新版本号</version>
-</dependency>
-
-```
-
-
-2. application.yml 增加如下配置，假设简单配置如下：
-
-```yaml
-
-##########################redisclent##############################
-guzt:
-  bpm2:
-    new-process-engine-config: true
-    database-schema-update: true
-    async-executor-activate: false
-##################################################################
-
-```
-
-**说明**
-   - 参数 async-executor-activate
-   
-    true: 业务系统当前没有任何flowable相关的配置，引入本配置将新配置一个流程引擎
-    
-    false: 业务系统本身已经有flowable相关的配置（例如：flowable-spring-boot-starter），不想重复配置流程引擎
-   
-   - 当 async-executor-activate 为fasle
-   
-   new-process-engine-config 和 database-schema-update 无需配置
-
-3. 业务代码中引入service
-
-```java
-
-@Service
-public class MyBusinessServiceImpl {
-    // 用户任务相关接口
-    @Resource
-    private BpmUserTaskService bpmUserTaskService;
-
-    // 流程部署查询操作接口
-    @Resource
-    private BpmProcessService bpmProcessService;
-
-}
-
-```
-
-## 用户任务接口预览
-
-```java
-
 package com.guzt.starter.bpm2.service;
 
 import com.guzt.starter.bpm2.pojo.dto.MultiInstanceUserDTO;
@@ -92,7 +16,7 @@ import java.util.Set;
 /**
  * 流程中的任务管理
  *
- * @author <a href="mailto:xxx@163.com">bbb</a>
+ * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
  */
 public interface BpmUserTaskService {
 
@@ -228,11 +152,3 @@ public interface BpmUserTaskService {
     List<BpmTaskEntity> listHisTodoTask(BpmTaskQuery query);
 
 }
-
-```
-
-
-
-
-
-
