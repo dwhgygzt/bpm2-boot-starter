@@ -19,7 +19,7 @@ flowable 6.5.0 开始部分功能已经商业化了，为了稳妥起见，因�
 ```xml
 <!-- 对象存储通用接口 -->
 <dependency>
-    <groupId>com.guztcom.guzt</groupId>
+    <groupId>com.guzt</groupId>
     <artifactId>bpm2-spring-boot-starter</artifactId>
     <version>最新版本号</version>
 </dependency>
