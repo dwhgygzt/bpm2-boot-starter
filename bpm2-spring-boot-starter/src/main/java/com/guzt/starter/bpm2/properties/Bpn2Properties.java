@@ -5,9 +5,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * bpm2 配置文件
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
-@ConfigurationProperties(prefix = "guzt.bpm2")
+@ConfigurationProperties(prefix = "middol.bpm2")
 public class Bpn2Properties {
 
 

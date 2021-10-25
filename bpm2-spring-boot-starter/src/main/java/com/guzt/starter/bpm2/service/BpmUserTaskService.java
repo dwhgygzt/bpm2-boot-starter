@@ -10,13 +10,14 @@ import com.guzt.starter.bpm2.pojo.form.BpmMultInstDeleteForm;
 import com.guzt.starter.bpm2.pojo.query.BpmBackTaskModelQuery;
 import com.guzt.starter.bpm2.pojo.query.BpmTaskQuery;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
 /**
  * 流程中的任务管理
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public interface BpmUserTaskService {
 
@@ -74,6 +75,14 @@ public interface BpmUserTaskService {
      * @param form ignore
      */
     void commit(BpmCommitForm form);
+
+    /**
+     * 设置某个任务的超时截止日期
+     *
+     * @param taskId  任务id
+     * @param dueDate 超时截止日期
+     */
+    void setDueDate(String taskId, Date dueDate);
 
     /**
      * 申领任务
@@ -150,5 +159,22 @@ public interface BpmUserTaskService {
      * @return ignore
      */
     List<BpmTaskEntity> listHisTodoTask(BpmTaskQuery query);
+
+    /**
+     * 根据 processInstanceId 查询最近一次提交的任务信息
+     *
+     * @param processInstanceId 流程实例id
+     * @return BpmTaskEntity
+     */
+    BpmTaskEntity getLastFinishedTask(String processInstanceId);
+
+    /**
+     * 根据flowable 表达式获得表达式的最终值
+     *
+     * @param taskId     当前任务编号
+     * @param expression uel表达式 例如 ${userName1}
+     * @return 表达式的值
+     */
+    Object getExpressionValue(String taskId, String expression);
 
 }

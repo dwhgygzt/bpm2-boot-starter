@@ -5,7 +5,7 @@ import com.guzt.starter.bpm2.pojo.BpmBaseParam;
 /**
  * 多实例任务 加签
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmMultInstAddForm extends BpmBaseParam {
 

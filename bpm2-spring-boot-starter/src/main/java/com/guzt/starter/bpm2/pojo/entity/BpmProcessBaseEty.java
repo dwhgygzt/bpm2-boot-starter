@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * 流程实例对象
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmProcessBaseEty implements Serializable {
 

@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * BPM 基础参数
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmBaseParam implements Serializable {
 

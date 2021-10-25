@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 /**
  * 流程图中的某个用户任务节点
+ *
  * @author guzt
  */
 public class BpmTaskMinModelEntity implements Serializable {
@@ -59,6 +60,26 @@ public class BpmTaskMinModelEntity implements Serializable {
      * 跳过该节点表达式
      */
     protected String skipExpression;
+
+    /**
+     * 扩展属性 动作类型，提交还是审批
+     */
+    protected String attrNodetype;
+
+    /**
+     * 扩展属性 是否可以撤销该步骤
+     */
+    protected Boolean attrRevokeflag;
+
+    /**
+     * 扩展属性 是否可以终止流程
+     */
+    protected Boolean attrEndflag;
+
+    /**
+     * 到期时间表达式
+     */
+    protected String duedatedefinition;
 
 
     public String getTaskDefKey() {
@@ -139,5 +160,37 @@ public class BpmTaskMinModelEntity implements Serializable {
 
     public void setSkipExpression(String skipExpression) {
         this.skipExpression = skipExpression;
+    }
+
+    public String getAttrNodetype() {
+        return attrNodetype;
+    }
+
+    public void setAttrNodetype(String attrNodetype) {
+        this.attrNodetype = attrNodetype;
+    }
+
+    public Boolean getAttrRevokeflag() {
+        return attrRevokeflag;
+    }
+
+    public void setAttrRevokeflag(Boolean attrRevokeflag) {
+        this.attrRevokeflag = attrRevokeflag;
+    }
+
+    public Boolean getAttrEndflag() {
+        return attrEndflag;
+    }
+
+    public void setAttrEndflag(Boolean attrEndflag) {
+        this.attrEndflag = attrEndflag;
+    }
+
+    public String getDuedatedefinition() {
+        return duedatedefinition;
+    }
+
+    public void setDuedatedefinition(String duedatedefinition) {
+        this.duedatedefinition = duedatedefinition;
     }
 }

@@ -1,9 +1,11 @@
 package com.guzt.starter.bpm2.pojo.query;
 
+import java.util.Date;
+
 /**
  * 查询流程定义中的用户任务
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmTaskQuery extends BpmBasePageQuery {
 
@@ -45,6 +47,30 @@ public class BpmTaskQuery extends BpmBasePageQuery {
      * 任务待处理人，或待处理组织 （固定人员、候选人、组）
      */
     private String candidateUser;
+
+    /**
+     * 目前只适应于查询待处理任务.
+     * 查询到期日在 dueDateAfter 之后的任务
+     */
+    private Date dueDateAfter;
+
+    /**
+     * 目前只适应于查询待处理任务.
+     * 查询到期日在 dueDateAfter 之前的任务
+     */
+    private Date dueDateBefore;
+
+    /**
+     * 目前只适应于查询待处理任务.
+     * 查询到期日是 dueDate 的任务
+     */
+    private Date dueDate;
+
+    /**
+     * 目前只适应于查询待处理任务.
+     * 是否查询超期的任务， true 查询超期  ,  false 查询未超期 , null不进行筛选
+     */
+    private Boolean alreadyOvertime;
 
     public String getProcessInstanceId() {
         return processInstanceId;
@@ -92,5 +118,37 @@ public class BpmTaskQuery extends BpmBasePageQuery {
 
     public void setCandidateUser(String candidateUser) {
         this.candidateUser = candidateUser;
+    }
+
+    public Date getDueDateAfter() {
+        return dueDateAfter;
+    }
+
+    public void setDueDateAfter(Date dueDateAfter) {
+        this.dueDateAfter = dueDateAfter;
+    }
+
+    public Date getDueDateBefore() {
+        return dueDateBefore;
+    }
+
+    public void setDueDateBefore(Date dueDateBefore) {
+        this.dueDateBefore = dueDateBefore;
+    }
+
+    public Date getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(Date dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public Boolean getAlreadyOvertime() {
+        return alreadyOvertime;
+    }
+
+    public void setAlreadyOvertime(Boolean alreadyOvertime) {
+        this.alreadyOvertime = alreadyOvertime;
     }
 }

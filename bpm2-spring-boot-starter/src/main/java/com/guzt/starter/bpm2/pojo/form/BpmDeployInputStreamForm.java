@@ -7,7 +7,7 @@ import java.io.InputStream;
 /**
  * 部署流程
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmDeployInputStreamForm extends BpmBaseParam {
 
@@ -29,6 +29,19 @@ public class BpmDeployInputStreamForm extends BpmBaseParam {
      * DeploymentBuilder addBytes(String resourceName, byte[] bytes);
      */
     InputStream inputStream;
+
+    /**
+     * 流程类别
+     */
+    String category;
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
 
     public String getDeployResourceName() {
         return deployResourceName;

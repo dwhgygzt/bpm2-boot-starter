@@ -25,7 +25,7 @@ import javax.sql.DataSource;
 /**
  * BPM 相关配置
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 @Configuration
 @EnableConfigurationProperties({Bpn2Properties.class})
@@ -33,7 +33,7 @@ public class Bpm2AutoConfig {
 
 
     @Configuration
-    @ConditionalOnProperty(prefix = "guzt.bpm2", value = "new-process-engine-config", havingValue = "false")
+    @ConditionalOnProperty(prefix = "middol.bpm2", value = "new-process-engine-config", havingValue = "false")
     public static class ExistsSpringBootStarter {
         private static final Logger logger = LoggerFactory.getLogger(ExistsSpringBootStarter.class);
 
@@ -99,7 +99,7 @@ public class Bpm2AutoConfig {
     }
 
     @Configuration
-    @ConditionalOnProperty(prefix = "guzt.bpm2", value = "new-process-engine-config", havingValue = "true")
+    @ConditionalOnProperty(prefix = "middol.bpm2", value = "new-process-engine-config", havingValue = "true")
     public static class NotExistsSpringBootStarter {
 
         private static final Logger logger = LoggerFactory.getLogger(ExistsSpringBootStarter.class);

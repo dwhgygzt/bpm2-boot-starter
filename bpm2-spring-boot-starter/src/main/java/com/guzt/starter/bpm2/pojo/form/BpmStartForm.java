@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * 启动某个流程
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmStartForm extends BpmBaseParam {
 
@@ -39,6 +39,11 @@ public class BpmStartForm extends BpmBaseParam {
      * 当然有节点任务设置 跳过节点表达式时，请设置该值为true，默认不开启
      */
     private Boolean enableSkipExpression;
+
+    /**
+     * 流程启动者，一般可设为人员的用户名
+     */
+    private String startUser;
 
     public String getDefineKey() {
         return defineKey;
@@ -78,5 +83,13 @@ public class BpmStartForm extends BpmBaseParam {
 
     public void setEnableSkipExpression(Boolean enableSkipExpression) {
         this.enableSkipExpression = enableSkipExpression;
+    }
+
+    public String getStartUser() {
+        return startUser;
+    }
+
+    public void setStartUser(String startUser) {
+        this.startUser = startUser;
     }
 }

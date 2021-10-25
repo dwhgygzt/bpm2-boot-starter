@@ -1,7 +1,12 @@
 package com.guzt.starter.bpm2.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.date.DateField;
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guzt.starter.bpm2.exception.BpmBusinessException;
 import com.guzt.starter.bpm2.pojo.dto.MultiInstanceUserDTO;
 import com.guzt.starter.bpm2.pojo.dto.ParallelGatwayDTO;
@@ -19,11 +24,14 @@ import com.guzt.starter.bpm2.pojo.query.BpmTaskQuery;
 import com.guzt.starter.bpm2.service.BpmProcessService;
 import com.guzt.starter.bpm2.service.BpmUserTaskService;
 import com.guzt.starter.bpm2.service.extend.SaveExecutionCmd;
+import com.guzt.starter.bpm2.util.UserTaskAttrUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.flowable.bpmn.model.Process;
 import org.flowable.bpmn.model.*;
+import org.flowable.common.engine.api.delegate.Expression;
 import org.flowable.common.engine.impl.cfg.IdGenerator;
 import org.flowable.engine.*;
+import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
 import org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl;
@@ -48,7 +56,7 @@ import java.util.stream.Collectors;
 /**
  * Flowable 6 - 任务管理
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
 public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
@@ -130,10 +138,24 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
         if (StringUtils.isNotBlank(query.getCandidateUser())) {
             taskQuery.taskCandidateOrAssigned(query.getCandidateUser());
         }
-
+        if (query.getDueDateAfter() != null) {
+            taskQuery.taskDueAfter(query.getDueDateAfter());
+        }
+        if (query.getDueDateBefore() != null) {
+            taskQuery.taskDueBefore(query.getDueDateBefore());
+        }
+        if (query.getDueDate() != null) {
+            taskQuery.taskDueDate(query.getDueDate());
+        }
+        if (Boolean.TRUE.equals(query.getAlreadyOvertime())) {
+            taskQuery.taskDueBefore(DateUtil.parseDate(DateUtil.today()));
+        }
+        if (Boolean.FALSE.equals(query.getAlreadyOvertime())) {
+            taskQuery.taskDueAfter(DateUtil.parseDate(DateUtil.today()));
+        }
         taskQuery.orderByTaskCreateTime().desc();
         if (query.getPageNo() != null && query.getPageSize() != null) {
-            taskList = taskQuery.listPage(query.getPageNo(), query.getPageSize());
+            taskList = taskQuery.listPage(query.getPageNo() - 1, query.getPageSize());
         } else {
             taskList = taskQuery.list();
         }
@@ -145,7 +167,7 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
     public BpmTaskEntity getTodoTaskById(String taskId) {
         List<Task> taskList = taskService.createTaskQuery().taskId(taskId).list();
         List<BpmTaskEntity> list = convertBpmTaskEntity(taskList);
-        if (CollectionUtils.isEmpty(list)) {
+        if (CollectionUtil.isNotEmpty(list)) {
             return list.get(0);
         } else {
             return null;
@@ -176,6 +198,7 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
         result.add(entity);
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     @SuppressWarnings("unchecked")
     @Override
     public void addMultiInstanceExecution(BpmMultInstAddForm form) {
@@ -225,6 +248,7 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
     }
 
 
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     @SuppressWarnings("unchecked")
     @Override
     public void deleteMultiInstanceExecution(BpmMultInstDeleteForm form) {
@@ -329,6 +353,7 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
         return list;
     }
 
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     @Override
     public void commit(BpmCommitForm form) {
         Task task = taskService.createTaskQuery().taskId(form.getTaskId()).singleResult();
@@ -348,6 +373,84 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
             taskService.setVariablesLocal(form.getTaskId(), form.getLocalVariables());
         }
         taskService.complete(form.getTaskId());
+
+        try {
+            setCurrentTaskDueDate(task.getTenantId(), task.getProcessInstanceId());
+        } catch (JsonProcessingException e) {
+            logger.error("当前任务的超时时间异常", e);
+            BpmBusinessException.createByErrorMsg("当前任务的超时时间异常");
+        }
+    }
+
+    /**
+     * 设置 当前任务的超时时间，flowable6.4.x 没有设置完善此功能. duedatedefinition 的值类型如下
+     * {"duedateExpression":"${dueDate1}"}
+     * {"duedate":{"fixed":{"days":6,"years":1,"months":2,"hours":5,"minutes":10,"seconds":30}}}
+     *
+     * @param tenantId              租户号
+     * @param processInstanceTaskId 当前实例id
+     */
+    @SuppressWarnings("rawtypes")
+    protected void setCurrentTaskDueDate(String tenantId, String processInstanceTaskId) throws JsonProcessingException {
+        BpmTaskQuery query = new BpmTaskQuery();
+        query.setTenantId(tenantId);
+        query.setProcessInstanceId(processInstanceTaskId);
+        List<BpmTaskEntity> list = listTodoTask(query);
+        if (CollectionUtil.isNotEmpty(list)) {
+            for (BpmTaskEntity entity : list) {
+                String duedatedefinition = entity.getDuedatedefinition();
+                String defaultStr = "\"\"";
+                if (StrUtil.isNotBlank(duedatedefinition) && !defaultStr.equals(duedatedefinition)) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    Map values = mapper.readValue(duedatedefinition, HashMap.class);
+                    Object duedateExpression = values.get("duedateExpression");
+                    if (duedateExpression instanceof String) {
+                        Object dueDate = getExpressionValue(entity.getId(), duedatedefinition);
+                        if (dueDate instanceof Date) {
+                            setDueDate(entity.getId(), (Date) dueDate);
+                        } else {
+                            logger.error("设置任务{} 的过期时间时，根据表达式{}获取的值非 Date类型", entity.getTaskName(), duedateExpression);
+                        }
+                    }
+                    Object duedate = values.get("duedate");
+                    if (duedate instanceof HashMap) {
+                        Map finxedMap = ((HashMap) ((HashMap) duedate).get("fixed"));
+                        Date now = new Date();
+                        Object days = finxedMap.get("days");
+                        Object years = finxedMap.get("years");
+                        Object months = finxedMap.get("months");
+                        Object hours = finxedMap.get("hours");
+                        Object minutes = finxedMap.get("minutes");
+                        Object seconds = finxedMap.get("seconds");
+
+                        if (days != null) {
+                            now = DateUtil.offsetDay(now, (int) days);
+                        }
+                        if (years != null) {
+                            now = DateUtil.offset(now, DateField.YEAR, (int) years);
+                        }
+                        if (months != null) {
+                            now = DateUtil.offsetMonth(now, (int) months);
+                        }
+                        if (hours != null) {
+                            now = DateUtil.offsetHour(now, (int) hours);
+                        }
+                        if (minutes != null) {
+                            now = DateUtil.offsetMinute(now, (int) minutes);
+                        }
+                        if (seconds != null) {
+                            now = DateUtil.offsetSecond(now, (int) seconds);
+                        }
+                        setDueDate(entity.getId(), now);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void setDueDate(String taskId, Date dueDate) {
+        taskService.setDueDate(taskId, dueDate);
     }
 
     @Override
@@ -378,16 +481,30 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
                 taskQuery.processUnfinished();
             }
         }
+
         taskQuery.finished();
         taskQuery.orderByTaskCreateTime().desc();
         if (query.getPageNo() != null && query.getPageSize() != null) {
-            taskList = taskQuery.listPage(query.getPageNo(), query.getPageSize());
+            taskList = taskQuery.listPage(query.getPageNo() - 1, query.getPageSize());
         } else {
             taskList = taskQuery.list();
         }
 
-
         return convertBpmHisTaskEntity(taskList);
+    }
+
+    @Override
+    public BpmTaskEntity getLastFinishedTask(String processInstanceId) {
+        HistoricTaskInstanceQuery taskQuery = historyService.createHistoricTaskInstanceQuery();
+        taskQuery.processInstanceId(processInstanceId);
+        taskQuery.finished();
+        taskQuery.orderByHistoricTaskInstanceEndTime().desc();
+        List<HistoricTaskInstance> taskList = taskQuery.listPage(0, 1);
+        if (CollectionUtil.isNotEmpty(taskList)) {
+            List<BpmTaskEntity> resultList = convertBpmHisTaskEntity(taskList);
+            return resultList.get(0);
+        }
+        return null;
     }
 
     /**
@@ -432,11 +549,14 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
         entity.setProcDefId(item.getProcessDefinitionId());
         entity.setAssignee(item.getAssignee());
         entity.setStartTime(item.getCreateTime());
+        if (item instanceof HistoricTaskInstance) {
+            entity.setEndTime(((HistoricTaskInstance) item).getEndTime());
+        }
         entity.setTenantId(item.getTenantId());
         entity.setFormKey(item.getFormKey());
         entity.setCategory(item.getCategory());
         entity.setTaskDefKey(item.getTaskDefinitionKey());
-
+        entity.setDueDate(item.getDueDate());
         // 是否多实例信息设置
         UserTask userTaskModel = allUserTaskMap.get(item.getTaskDefinitionKey());
         entity.setSkipExpression(userTaskModel.getSkipExpression());
@@ -446,6 +566,7 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
         } else {
             entity.setSequential(false);
         }
+        UserTaskAttrUtil.setAttr(entity, userTaskModel);
     }
 
     private Map<String, UserTask> getAllUserTaskMap(String processDefinitionId) {
@@ -458,28 +579,8 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
                 .stream().collect(Collectors.toMap(UserTask::getId, a -> a, (k1, k2) -> k1));
     }
 
-    @Override
-    public List<BpmTaskModelEntity> listBackTaskModel(BpmBackTaskModelQuery query) {
-        List<BpmTaskModelEntity> resultTasks = new ArrayList<>(8);
-        Task task = taskService.createTaskQuery().taskId(query.getTaskId()).singleResult();
-        Map<String, BpmTaskModelEntity> allTaskMap = initLimitBackTaskModel(query, task);
 
-        Map<String, FlowElement> flowElementMap = getAllFlowElement(task.getProcessDefinitionId());
-        FlowElement targetFlowElement = flowElementMap.get(task.getTaskDefinitionKey());
-        // 目标节点的上游节点集合
-        List<UserTask> tasks = new ArrayList<>(8);
-        Map<String, UserTask> taskMap = new HashMap<>(8);
-        loopIncomingFlows(((FlowNode) targetFlowElement).getIncomingFlows(),
-                tasks, taskMap, flowElementMap, query.getCategory(), true);
-        tasks.forEach(item -> {
-            if (allTaskMap.containsKey(item.getId())) {
-                resultTasks.add(allTaskMap.get(item.getId()));
-            }
-        });
-
-        return resultTasks;
-    }
-
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     @Override
     public void jump(BpmJumpForm form) {
         Task task = taskService.createTaskQuery().taskId(form.getTaskId()).singleResult();
@@ -494,9 +595,9 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
         Map<String, BpmTaskModelEntity> taskModelEntitiesMap = taskModelEntities.stream().collect(
                 Collectors.toMap(BpmTaskModelEntity::getTaskDefKey, a -> a, (k1, k2) -> k1));
 
-        // 当前节点 A
-        List<BpmTaskModelEntity> targetNodes = new ArrayList<>(4);
         // 要跳转的节点 B
+        List<BpmTaskModelEntity> targetNodes = new ArrayList<>(4);
+        // 当前节点 A
         BpmTaskModelEntity currentNode = taskModelEntitiesMap.get(task.getTaskDefinitionKey());
         form.getTargetTaskDefineKes().forEach(item -> targetNodes.add(taskModelEntitiesMap.get(item)));
         if (currentNode == null || CollectionUtils.isEmpty(targetNodes)) {
@@ -541,6 +642,13 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
             //    B如果是为并行网关上节点，需要创建其B所在并行网关内其他任务节点已完成日志
             gatewayJump(userTaskModelsDTO, targetNodes, currentNode, task, form);
 
+        }
+
+        try {
+            setCurrentTaskDueDate(task.getTenantId(), task.getProcessInstanceId());
+        } catch (JsonProcessingException e) {
+            logger.error("当前任务的超时时间异常", e);
+            BpmBusinessException.createByErrorMsg("当前任务的超时时间异常");
         }
     }
 
@@ -846,6 +954,28 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
     }
 
     @Override
+    public List<BpmTaskModelEntity> listBackTaskModel(BpmBackTaskModelQuery query) {
+        List<BpmTaskModelEntity> resultTasks = new ArrayList<>(4);
+        Task task = taskService.createTaskQuery().taskId(query.getTaskId()).singleResult();
+        Map<String, BpmTaskModelEntity> allTaskMap = initLimitBackTaskModel(query, task);
+
+        Map<String, FlowElement> flowElementMap = getAllFlowElement(task.getProcessDefinitionId());
+        FlowElement targetFlowElement = flowElementMap.get(task.getTaskDefinitionKey());
+        // 目标节点的上游节点集合
+        List<UserTask> tasks = new ArrayList<>(8);
+        Map<String, UserTask> taskMap = new HashMap<>(8);
+        loopIncomingFlows(((FlowNode) targetFlowElement).getIncomingFlows(),
+                tasks, taskMap, flowElementMap, query, true);
+        tasks.forEach(item -> {
+            if (allTaskMap.containsKey(item.getId())) {
+                resultTasks.add(allTaskMap.get(item.getId()));
+            }
+        });
+
+        return resultTasks;
+    }
+
+    @Override
     public List<BpmTaskModelEntity> listAllBackTaskModel(BpmBackTaskModelQuery query) {
         List<BpmTaskModelEntity> resultTasks = new ArrayList<>(16);
         Task task = taskService.createTaskQuery().taskId(query.getTaskId()).singleResult();
@@ -857,7 +987,7 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
         List<UserTask> tasks = new ArrayList<>(16);
         Map<String, UserTask> taskMap = new HashMap<>(16);
         loopIncomingFlows(((FlowNode) targetFlowElement).getIncomingFlows(),
-                tasks, taskMap, flowElementMap, query.getCategory(), false);
+                tasks, taskMap, flowElementMap, query, false);
         tasks.forEach(item -> {
             if (allTaskMap.containsKey(item.getId())) {
                 resultTasks.add(allTaskMap.get(item.getId()));
@@ -887,6 +1017,9 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
         if (StringUtils.isNotBlank(query.getCategory())) {
             taskModelQuery.setCategory(query.getCategory());
         }
+        if (StringUtils.isNotBlank(query.getNodeType())) {
+            taskModelQuery.setNodeType(query.getNodeType());
+        }
         List<BpmTaskModelEntity> allTasks = bpmProcessService.listUserTaskModels(taskModelQuery);
         if (CollectionUtils.isEmpty(allTasks)) {
             return new HashMap<>(2);
@@ -900,18 +1033,18 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
      * 递归获取某个节点前面的所有相关节点
      *
      * @param incomingFlows  相邻来源节点引用集合
-     * @param tasks          最后输出的 List结果集
-     * @param taskMap        最后输出的 Map结果集
+     * @param resultTasks    最后输出的 List结果集
+     * @param resultTaskMap  最后输出的 Map结果集
      * @param flowElementMap Process # getFlowElementMap()
-     * @param category       任务分类筛选
+     * @param query          任务查询条件
      * @param isOneBack      是否一条线上只找一个符合条件的任务
      */
     private void loopIncomingFlows(
             List<SequenceFlow> incomingFlows,
-            List<UserTask> tasks,
-            Map<String, UserTask> taskMap,
+            List<UserTask> resultTasks,
+            Map<String, UserTask> resultTaskMap,
             Map<String, FlowElement> flowElementMap,
-            String category,
+            BpmBackTaskModelQuery query,
             boolean isOneBack) {
         if (CollectionUtils.isEmpty(incomingFlows)) {
             return;
@@ -923,13 +1056,15 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
                 if (flowElement instanceof UserTask) {
                     UserTask task = (UserTask) flowElement;
                     boolean check = true;
-                    if (StringUtils.isNotBlank(category) && !category.equals(task.getCategory())) {
+                    if (StringUtils.isNotBlank(query.getCategory()) && !query.getCategory().equals(task.getCategory())) {
                         check = false;
                     }
-
-                    if (check && !taskMap.containsKey(task.getId())) {
-                        tasks.add(task);
-                        taskMap.put(task.getId(), task);
+                    if (StringUtils.isNotBlank(query.getNodeType()) && !query.getNodeType().equals(UserTaskAttrUtil.getAttr(task, UserTaskAttrUtil.NODE_TYPE_KEY))) {
+                        check = false;
+                    }
+                    if (check && !resultTaskMap.containsKey(task.getId())) {
+                        resultTasks.add(task);
+                        resultTaskMap.put(task.getId(), task);
 
                         if (isOneBack) {
                             continue;
@@ -938,7 +1073,7 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
                 }
 
                 loopIncomingFlows(((FlowNode) flowElement).getIncomingFlows(),
-                        tasks, taskMap, flowElementMap, category, isOneBack);
+                        resultTasks, resultTaskMap, flowElementMap, query, isOneBack);
             }
         }
     }
@@ -1018,6 +1153,20 @@ public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {
                 "DELETE FROM act_ru_variable  WHERE EXECUTION_ID_ = '" + executionId + "'").list();
         runtimeService.createNativeExecutionQuery().sql(
                 "DELETE FROM act_ru_execution  WHERE ID_ = '" + executionId + "'").list();
+
+    }
+
+    @Override
+    public Object getExpressionValue(String taskId, String expression) {
+
+        Expression expressionBean = ((ProcessEngineConfigurationImpl) processEngineConfiguration)
+                .getExpressionManager()
+                .createExpression(expression);
+        Map<String, Object> variables = taskService.getVariables(taskId);
+        DelegateExecution delegateExecution = new ExecutionEntityImpl();
+        delegateExecution.setTransientVariables(variables);
+
+        return expressionBean.getValue(delegateExecution);
 
     }
 }

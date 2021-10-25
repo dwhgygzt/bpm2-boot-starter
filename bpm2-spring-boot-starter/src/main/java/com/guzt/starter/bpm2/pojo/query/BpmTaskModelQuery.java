@@ -5,14 +5,14 @@ import com.guzt.starter.bpm2.pojo.BpmBaseParam;
 /**
  * 查询流程定义中的用户任务
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmTaskModelQuery extends BpmBaseParam {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 【必填字段】按照id查询
+     * 按照id查询
      */
     private String defineId;
 
@@ -25,6 +25,11 @@ public class BpmTaskModelQuery extends BpmBaseParam {
      * 按照任务分类精确查询
      */
     private String category;
+
+    /**
+     * 任务的操作类型  提交还是审核 对应画图中的 任务类型 “COMMIT  AUDIT”
+     */
+    private String nodeType;
 
     public String getDefineId() {
         return defineId;
@@ -48,5 +53,13 @@ public class BpmTaskModelQuery extends BpmBaseParam {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getNodeType() {
+        return nodeType;
+    }
+
+    public void setNodeType(String nodeType) {
+        this.nodeType = nodeType;
     }
 }

@@ -7,7 +7,7 @@ import java.awt.*;
 /**
  * 查询流程图
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmDirgarmQuery extends BpmBaseParam {
 

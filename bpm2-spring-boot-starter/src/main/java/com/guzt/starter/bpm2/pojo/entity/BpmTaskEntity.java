@@ -36,6 +36,11 @@ public class BpmTaskEntity extends BpmTaskMinModelEntity {
      */
     private Date endTime;
 
+    /**
+     * Due date of the task.
+     */
+    private Date dueDate;
+
 
     public String getId() {
         return id;
@@ -75,5 +80,13 @@ public class BpmTaskEntity extends BpmTaskMinModelEntity {
 
     public void setEndTime(Date endTime) {
         this.endTime = endTime;
+    }
+
+    public Date getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(Date dueDate) {
+        this.dueDate = dueDate;
     }
 }

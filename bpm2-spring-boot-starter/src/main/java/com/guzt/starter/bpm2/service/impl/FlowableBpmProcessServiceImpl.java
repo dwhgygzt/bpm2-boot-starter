@@ -1,24 +1,30 @@
 package com.guzt.starter.bpm2.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.guzt.starter.bpm2.exception.BpmBusinessException;
 import com.guzt.starter.bpm2.pojo.context.HighlightColorContext;
 import com.guzt.starter.bpm2.pojo.dto.ParallelGatwayDTO;
 import com.guzt.starter.bpm2.pojo.dto.UserTaskModelDTO;
-import com.guzt.starter.bpm2.pojo.entity.BpmProcessDefineEntity;
-import com.guzt.starter.bpm2.pojo.entity.BpmProcessInstanceEntity;
-import com.guzt.starter.bpm2.pojo.entity.BpmTaskMinModelEntity;
-import com.guzt.starter.bpm2.pojo.entity.BpmTaskModelEntity;
+import com.guzt.starter.bpm2.pojo.entity.*;
 import com.guzt.starter.bpm2.pojo.form.*;
 import com.guzt.starter.bpm2.pojo.query.BpmDirgarmQuery;
 import com.guzt.starter.bpm2.pojo.query.BpmProcessQuery;
 import com.guzt.starter.bpm2.pojo.query.BpmTaskModelQuery;
 import com.guzt.starter.bpm2.service.BpmProcessService;
+import com.guzt.starter.bpm2.util.UserTaskAttrUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.flowable.bpmn.model.Process;
 import org.flowable.bpmn.model.*;
+import org.flowable.common.engine.api.delegate.Expression;
+import org.flowable.common.engine.impl.identity.Authentication;
 import org.flowable.engine.*;
+import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
+import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
+import org.flowable.engine.impl.persistence.entity.ExecutionEntityImpl;
+import org.flowable.engine.repository.Deployment;
+import org.flowable.engine.repository.DeploymentQuery;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.repository.ProcessDefinitionQuery;
 import org.flowable.engine.runtime.ProcessInstance;
@@ -39,7 +45,7 @@ import java.util.stream.Collectors;
 /**
  * Flowable 6 - 流程管理
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class FlowableBpmProcessServiceImpl implements BpmProcessService {
 
@@ -89,6 +95,7 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
                 .createDeployment()
                 .addBytes(bytesForm.getDeployResourceName(), bytesForm.getDeployBytes())
                 .tenantId(bytesForm.getTenantId())
+                .category(bytesForm.getCategory())
                 .deploy();
     }
 
@@ -100,6 +107,7 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
                 .createDeployment()
                 .addClasspathResource(classResourceForm.getResource())
                 .tenantId(classResourceForm.getTenantId())
+                .category(classResourceForm.getCategory())
                 .deploy();
     }
 
@@ -111,6 +119,7 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
                 .createDeployment()
                 .addInputStream(inputStreamForm.getDeployResourceName(), inputStreamForm.getInputStream())
                 .tenantId(inputStreamForm.getTenantId())
+                .category(inputStreamForm.getCategory())
                 .deploy();
     }
 
@@ -122,6 +131,7 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
                 .createDeployment()
                 .addString(textForm.getDeployResourceName(), textForm.getText())
                 .tenantId(textForm.getTenantId())
+                .category(textForm.getCategory())
                 .deploy();
     }
 
@@ -135,8 +145,11 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
     public BpmProcessDefineEntity getDefineById(String defineId) {
         ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery().processDefinitionId(defineId).singleResult();
         if (processDefinition != null) {
+            Deployment deployment = repositoryService.createDeploymentQuery().deploymentId(processDefinition.getDeploymentId()).singleResult();
+            Map<String, String> deploymentCategorys = new HashMap<>(2);
+            deploymentCategorys.put(deployment.getId(), deployment.getCategory());
             BpmProcessDefineEntity entity = new BpmProcessDefineEntity();
-            flowableDefinitionToBpmEntity(processDefinition, entity);
+            flowableDefinitionToBpmEntity(processDefinition, entity, deploymentCategorys);
             return entity;
         } else {
             return null;
@@ -145,8 +158,12 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
 
     @Override
     public List<BpmProcessDefineEntity> listDefines(BpmProcessQuery query) {
+        DeploymentQuery deploymentQuery = repositoryService.createDeploymentQuery();
+        List<BpmProcessDefineEntity> entities = new ArrayList<>(4);
+        List<Deployment> deployments = null;
         ProcessDefinitionQuery processDefinitionQuery = repositoryService.createProcessDefinitionQuery();
         if (StringUtils.isNotBlank(query.getTenantId())) {
+            deploymentQuery.deploymentTenantId(query.getTenantId());
             processDefinitionQuery.processDefinitionTenantId(query.getTenantId());
         }
         if (StringUtils.isNotBlank(query.getDefineKey())) {
@@ -160,9 +177,6 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
         }
         if (StringUtils.isNotBlank(query.getDeployId())) {
             processDefinitionQuery.deploymentId(query.getDeployId());
-        }
-        if (StringUtils.isNotBlank(query.getCategory())) {
-            processDefinitionQuery.processDefinitionCategory(query.getCategory());
         }
         if (query.getSuspended() != null) {
             if (query.getSuspended()) {
@@ -179,19 +193,32 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
         if (StringUtils.isBlank(query.getDefineId()) && query.getVersionNumber() != null) {
             processDefinitionQuery.processDefinitionVersion(query.getVersionNumber());
         }
+        if (StringUtils.isNotBlank(query.getCategory())) {
+            deploymentQuery.deploymentCategory(query.getCategory());
+            deployments = deploymentQuery.list();
+            if (CollectionUtil.isNotEmpty(deployments)) {
+                processDefinitionQuery.deploymentIds(deployments.stream().map(Deployment::getId).collect(Collectors.toSet()));
+            } else {
+                return entities;
+            }
+        }
         processDefinitionQuery.orderByProcessDefinitionName().asc();
         List<ProcessDefinition> list;
         if (query.getPageNo() != null && query.getPageSize() != null) {
-            list = processDefinitionQuery.listPage(query.getPageNo(), query.getPageSize());
+            list = processDefinitionQuery.listPage(query.getPageNo() - 1, query.getPageSize());
         } else {
             list = processDefinitionQuery.list();
         }
 
-        List<BpmProcessDefineEntity> entities = new ArrayList<>(4);
         if (!CollectionUtils.isEmpty(list)) {
+            Map<String, String> deploymentCategorys;
+            if (CollectionUtil.isEmpty(deployments)) {
+                deployments = deploymentQuery.list();
+            }
+            deploymentCategorys = deployments.stream().collect(Collectors.toMap(Deployment::getId, Deployment::getCategory, (k1, k2) -> k1));
             for (ProcessDefinition item : list) {
                 BpmProcessDefineEntity entity = new BpmProcessDefineEntity();
-                flowableDefinitionToBpmEntity(item, entity);
+                flowableDefinitionToBpmEntity(item, entity, deploymentCategorys);
 
                 entities.add(entity);
             }
@@ -199,11 +226,11 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
         return entities;
     }
 
-    private void flowableDefinitionToBpmEntity(ProcessDefinition item, BpmProcessDefineEntity entity) {
+    private void flowableDefinitionToBpmEntity(ProcessDefinition item, BpmProcessDefineEntity entity, Map<String, String> deploymentCategorys) {
         entity.setDefineId(item.getId());
         entity.setDefineName(item.getName());
         entity.setDefineKey(item.getKey());
-        entity.setCategory(item.getCategory());
+        entity.setCategory(deploymentCategorys.get(item.getDeploymentId()));
         entity.setDeploymentId(item.getDeploymentId());
         entity.setTenantId(item.getTenantId());
         entity.setDescription(item.getDescription());
@@ -228,9 +255,12 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
             }
             processVariables.put("_FLOWABLE_SKIP_EXPRESSION_ENABLED", true);
         }
+        //设置流程发起人
+        Authentication.setAuthenticatedUserId(form.getStartUser());
+
         if (StringUtils.isNotBlank(form.getDefineId())) {
             processInstance = runtimeService.startProcessInstanceById(
-                    form.getDefineKey(),
+                    form.getDefineId(),
                     form.getBusinessKey(),
                     form.getProcessVariables());
         } else {
@@ -252,7 +282,8 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
             instanceEntity = new BpmProcessInstanceEntity();
             flowableInstanceToBpmEntity(processInstance, instanceEntity);
         }
-
+        //ThreadLocal类型的变量，所以流程实例启动完毕之后，需要设置为null，防止多线程的时候出问题。
+        Authentication.setAuthenticatedUserId(null);
         return instanceEntity;
     }
 
@@ -283,6 +314,7 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
         instanceEntity.setTenantId(processInstance.getTenantId());
         instanceEntity.setProcessVariables(processInstance.getProcessVariables());
         instanceEntity.setStartFormKey(formService.getStartFormKey(processInstance.getProcessDefinitionId()));
+        instanceEntity.setStartUser(processInstance.getStartUserId());
     }
 
     private void flowableInstanceToBpmEntity(HistoricProcessInstance hisProcessInstance, BpmProcessInstanceEntity instanceEntity) {
@@ -300,6 +332,7 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
         instanceEntity.setProcessVariables(hisProcessInstance.getProcessVariables());
         instanceEntity.setStartFormKey(formService.getStartFormKey(hisProcessInstance.getProcessDefinitionId()));
         instanceEntity.setInstanceId(hisProcessInstance.getId());
+        instanceEntity.setStartUser(hisProcessInstance.getStartUserId());
     }
 
     @Override
@@ -316,12 +349,15 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
 
     @Override
     public List<BpmProcessInstanceEntity> listInstances(BpmProcessQuery query) {
+        List<BpmProcessInstanceEntity> entities = new ArrayList<>(4);
         ProcessInstanceQuery processInstanceQuery = runtimeService.createProcessInstanceQuery();
+        DeploymentQuery deploymentQuery = repositoryService.createDeploymentQuery();
         if (StringUtils.isNotBlank(query.getNameLike())) {
             processInstanceQuery.processInstanceNameLike("%" + query.getNameLike() + "%");
         }
         if (StringUtils.isNotBlank(query.getTenantId())) {
             processInstanceQuery.processInstanceTenantId(query.getTenantId());
+            deploymentQuery.deploymentTenantId(query.getTenantId());
         }
         if (StringUtils.isNotBlank(query.getDefineKey())) {
             processInstanceQuery.processDefinitionKey(query.getDefineKey());
@@ -330,7 +366,13 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
             processInstanceQuery.processDefinitionId(query.getDefineId());
         }
         if (StringUtils.isNotBlank(query.getCategory())) {
-            processInstanceQuery.processDefinitionCategory(query.getCategory());
+            deploymentQuery.deploymentCategory(query.getCategory());
+            List<Deployment> deployments = deploymentQuery.list();
+            if (CollectionUtil.isNotEmpty(deployments)) {
+                processInstanceQuery.deploymentIdIn(deployments.stream().map(Deployment::getId).collect(Collectors.toList()));
+            } else {
+                return entities;
+            }
         }
         if (StringUtils.isNotBlank(query.getDeployId())) {
             processInstanceQuery.deploymentId(query.getDeployId());
@@ -348,11 +390,11 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
         processInstanceQuery.orderByStartTime().desc();
         List<ProcessInstance> list;
         if (query.getPageNo() != null && query.getPageSize() != null) {
-            list = processInstanceQuery.listPage(query.getPageNo(), query.getPageSize());
+            list = processInstanceQuery.listPage(query.getPageNo() - 1, query.getPageSize());
         } else {
             list = processInstanceQuery.list();
         }
-        List<BpmProcessInstanceEntity> entities = new ArrayList<>(4);
+
         if (!CollectionUtils.isEmpty(list)) {
             for (ProcessInstance item : list) {
                 BpmProcessInstanceEntity entity = new BpmProcessInstanceEntity();
@@ -366,12 +408,23 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
 
     @Override
     public List<BpmProcessInstanceEntity> listHisInstances(BpmProcessQuery query) {
+        List<BpmProcessInstanceEntity> entities = new ArrayList<>(16);
         HistoricProcessInstanceQuery hisProcessInstanceQuery = historyService.createHistoricProcessInstanceQuery();
         if (StringUtils.isNotBlank(query.getTenantId())) {
             hisProcessInstanceQuery.processInstanceTenantId(query.getTenantId());
         }
         if (StringUtils.isNotBlank(query.getNameLike())) {
             hisProcessInstanceQuery.processInstanceNameLike("%" + query.getNameLike() + "%");
+        }
+        if (StringUtils.isNotBlank(query.getCategory())) {
+            DeploymentQuery deploymentQuery = repositoryService.createDeploymentQuery();
+            deploymentQuery.deploymentCategory(query.getCategory());
+            List<Deployment> deployments = deploymentQuery.list();
+            if (CollectionUtil.isNotEmpty(deployments)) {
+                hisProcessInstanceQuery.deploymentIdIn(deployments.stream().map(Deployment::getId).collect(Collectors.toList()));
+            } else {
+                return entities;
+            }
         }
         if (StringUtils.isNotBlank(query.getCategory())) {
             hisProcessInstanceQuery.processDefinitionCategory(query.getCategory());
@@ -392,11 +445,11 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
         hisProcessInstanceQuery.orderByProcessInstanceStartTime().desc();
         List<HistoricProcessInstance> list;
         if (query.getPageNo() != null && query.getPageSize() != null) {
-            list = hisProcessInstanceQuery.listPage(query.getPageNo(), query.getPageSize());
+            list = hisProcessInstanceQuery.listPage(query.getPageNo() - 1, query.getPageSize());
         } else {
             list = hisProcessInstanceQuery.list();
         }
-        List<BpmProcessInstanceEntity> entities = new ArrayList<>(4);
+
         if (!CollectionUtils.isEmpty(list)) {
             for (HistoricProcessInstance item : list) {
                 BpmProcessInstanceEntity entity = new BpmProcessInstanceEntity();
@@ -530,13 +583,15 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
         List<BpmTaskMinModelEntity> list = new ArrayList<>(8);
         List<UserTask> userTasks = process.findFlowElementsOfType(UserTask.class);
         for (UserTask task : userTasks) {
-            if (StringUtils.isNotBlank(query.getCategory()) && !task.getCategory().equals(query.getCategory())) {
+            if (StringUtils.isNotBlank(query.getCategory()) && !query.getCategory().equals(task.getCategory())) {
                 continue;
             }
-            if (StringUtils.isNotBlank(query.getTaskDefKey()) && !task.getId().equals(query.getTaskDefKey())) {
+            if (StringUtils.isNotBlank(query.getTaskDefKey()) && !query.getTaskDefKey().equals(task.getId())) {
                 continue;
             }
-
+            if (StringUtils.isNotBlank(query.getNodeType()) && !query.getNodeType().equals(UserTaskAttrUtil.getAttr(task, UserTaskAttrUtil.NODE_TYPE_KEY))) {
+                continue;
+            }
             BpmTaskMinModelEntity userTaskModelEntity = new BpmTaskModelEntity();
             userTaskModelEntity.setTenantId(processDefinition.getTenantId());
             userTaskModelEntity.setProcDefId(processDefinition.getId());
@@ -549,10 +604,11 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
             userTaskModelEntity.setHasMultiInstance(task.hasMultiInstanceLoopCharacteristics());
             if (task.hasMultiInstanceLoopCharacteristics()) {
                 userTaskModelEntity.setSequential(task.getLoopCharacteristics().isSequential());
+                userTaskModelEntity.setAssignee("${" + task.getLoopCharacteristics().getInputDataItem() + "}");
             } else {
                 userTaskModelEntity.setSequential(false);
             }
-
+            UserTaskAttrUtil.setAttr(userTaskModelEntity, task);
             list.add(userTaskModelEntity);
         }
 
@@ -679,9 +735,11 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
         userTaskModelEntity.setSkipExpression(task.getSkipExpression());
         if (task.hasMultiInstanceLoopCharacteristics()) {
             userTaskModelEntity.setSequential(task.getLoopCharacteristics().isSequential());
+            userTaskModelEntity.setAssignee("${" + task.getLoopCharacteristics().getInputDataItem() + "}");
         } else {
             userTaskModelEntity.setSequential(false);
         }
+        UserTaskAttrUtil.setAttr(userTaskModelEntity, task);
     }
 
     /**
@@ -712,10 +770,13 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
                 if (dto.getUserTaskModels().containsKey(task.getId())) {
                     eligible = false;
                 }
-                if (StringUtils.isNotBlank(limitQuery.getCategory()) && !task.getCategory().equals(limitQuery.getCategory())) {
+                if (StringUtils.isNotBlank(limitQuery.getCategory()) && !limitQuery.getCategory().equals(task.getCategory())) {
                     eligible = false;
                 }
-                if (StringUtils.isNotBlank(limitQuery.getTaskDefKey()) && !task.getId().equals(limitQuery.getTaskDefKey())) {
+                if (StringUtils.isNotBlank(limitQuery.getTaskDefKey()) && !limitQuery.getTaskDefKey().equals(task.getId())) {
+                    eligible = false;
+                }
+                if (StringUtils.isNotBlank(limitQuery.getNodeType()) && !limitQuery.getNodeType().equals(UserTaskAttrUtil.getAttr(task, UserTaskAttrUtil.NODE_TYPE_KEY))) {
                     eligible = false;
                 }
                 if (eligible) {
@@ -759,5 +820,56 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
                 }
             }
         }
+    }
+
+    @Override
+    public Object getExpressionValue(Map<String, Object> variables, String expression) {
+        Expression expressionBean = ((ProcessEngineConfigurationImpl) processEngineConfiguration)
+                .getExpressionManager()
+                .createExpression(expression);
+        DelegateExecution delegateExecution = new ExecutionEntityImpl();
+        delegateExecution.setTransientVariables(variables);
+
+        return expressionBean.getValue(delegateExecution);
+    }
+
+    @Override
+    public boolean isFinished(String processInstanceId) {
+        long cnt = runtimeService.createProcessInstanceQuery().processInstanceId(processInstanceId).count();
+        return cnt == 0;
+    }
+
+    @Override
+    public StartEventEntity getStartEvent(String processDefinitionId) {
+        BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinitionId);
+        Process process = bpmnModel.getProcesses().get(0);
+        StartEvent startEvent = process.findFlowElementsOfType(StartEvent.class).get(0);
+        StartEventEntity eventEntity = new StartEventEntity();
+        eventEntity.setTaskDefKey(startEvent.getId());
+        eventEntity.setTaskName(startEvent.getName());
+        eventEntity.setFormKey(startEvent.getFormKey());
+        eventEntity.setInitiator(startEvent.getInitiator());
+        return eventEntity;
+    }
+
+    @Override
+    public EndEventEntity getEndEvent(String processDefinitionId) {
+        BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinitionId);
+        Process process = bpmnModel.getProcesses().get(0);
+        EndEvent endEvent = process.findFlowElementsOfType(EndEvent.class).get(0);
+        EndEventEntity eventEntity = new EndEventEntity();
+        eventEntity.setTaskDefKey(endEvent.getId());
+        eventEntity.setTaskName(endEvent.getName());
+        return eventEntity;
+    }
+
+    @Override
+    public void setRuVariable(String proInstanceId, String key, Object value) {
+        runtimeService.setVariable(proInstanceId, key, value);
+    }
+
+    @Override
+    public Object getRuVariable(String processInstanceId, String key) {
+        return runtimeService.getVariable(processInstanceId, key);
     }
 }

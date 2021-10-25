@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * 流程实例对象
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmProcessInstanceEntity extends BpmProcessBaseEty {
 
@@ -37,6 +37,11 @@ public class BpmProcessInstanceEntity extends BpmProcessBaseEty {
      * the name of this process instance.
      */
     private String name;
+
+    /**
+     * 流程启动者
+     */
+    private String startUser;
 
     /**
      * Returns the process variables if requested in the process instance query
@@ -89,5 +94,13 @@ public class BpmProcessInstanceEntity extends BpmProcessBaseEty {
 
     public void setEndTime(Date endTime) {
         this.endTime = endTime;
+    }
+
+    public String getStartUser() {
+        return startUser;
+    }
+
+    public void setStartUser(String startUser) {
+        this.startUser = startUser;
     }
 }

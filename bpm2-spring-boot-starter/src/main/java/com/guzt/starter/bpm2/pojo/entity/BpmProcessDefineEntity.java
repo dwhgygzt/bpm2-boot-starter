@@ -5,15 +5,16 @@ import org.flowable.engine.RepositoryService;
 /**
  * 流程定义对象
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmProcessDefineEntity extends BpmProcessBaseEty {
 
     private static final long serialVersionUID = 1L;
 
-
     /**
-     * category name which is derived from the targetNamespace attribute in the definitions element
+     * 流程分类名.
+     * <p>
+     * 取值 act_re_deployment 中的category， 即deploy时，传递的category值
      */
     private String category;
 

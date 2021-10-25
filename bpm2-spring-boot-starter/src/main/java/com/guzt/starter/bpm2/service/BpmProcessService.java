@@ -1,10 +1,7 @@
 package com.guzt.starter.bpm2.service;
 
 import com.guzt.starter.bpm2.pojo.dto.UserTaskModelDTO;
-import com.guzt.starter.bpm2.pojo.entity.BpmProcessDefineEntity;
-import com.guzt.starter.bpm2.pojo.entity.BpmProcessInstanceEntity;
-import com.guzt.starter.bpm2.pojo.entity.BpmTaskMinModelEntity;
-import com.guzt.starter.bpm2.pojo.entity.BpmTaskModelEntity;
+import com.guzt.starter.bpm2.pojo.entity.*;
 import com.guzt.starter.bpm2.pojo.form.*;
 import com.guzt.starter.bpm2.pojo.query.BpmDirgarmQuery;
 import com.guzt.starter.bpm2.pojo.query.BpmProcessQuery;
@@ -12,11 +9,12 @@ import com.guzt.starter.bpm2.pojo.query.BpmTaskModelQuery;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 流程管理
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public interface BpmProcessService {
 
@@ -184,5 +182,57 @@ public interface BpmProcessService {
      * @param processInstanceId 流程实例ID
      */
     void deleteHisProcessInstance(String processInstanceId);
+
+    /**
+     * 根据flowable 表达式获得表达式的最终值
+     *
+     * @param variables  传递可能需要的变量例如 {'userName1' : '张三' }
+     * @param expression uel表达式 例如 ${userName1}
+     * @return 表达式的值
+     */
+    Object getExpressionValue(Map<String, Object> variables, String expression);
+
+
+    /**
+     * 判断流程是否结束
+     *
+     * @param processInstanceId 当前实例id
+     * @return true 流程结束， false 没有结束
+     */
+    boolean isFinished(String processInstanceId);
+
+    /**
+     * 获得开始节点
+     *
+     * @param processDefinitionId 流程定义ID
+     * @return StartEventEntity
+     */
+    StartEventEntity getStartEvent(String processDefinitionId);
+
+    /**
+     * 获得结束节点
+     *
+     * @param processDefinitionId 流程定义ID
+     * @return EndEventEntity
+     */
+    EndEventEntity getEndEvent(String processDefinitionId);
+
+    /**
+     * 设置运行期间的流程变量
+     *
+     * @param proInstanceId 流程实例id
+     * @param key           ignore
+     * @param value         ignore
+     */
+    void setRuVariable(String proInstanceId, String key, Object value);
+
+    /**
+     * 获取运行期间的流程变量
+     *
+     * @param processInstanceId 流程实例id
+     * @param key               ignore
+     * @return ignore
+     */
+    Object getRuVariable(String processInstanceId, String key);
 
 }

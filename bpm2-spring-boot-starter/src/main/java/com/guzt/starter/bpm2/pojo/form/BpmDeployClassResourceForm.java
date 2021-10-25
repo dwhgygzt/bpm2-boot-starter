@@ -5,7 +5,7 @@ import com.guzt.starter.bpm2.pojo.BpmBaseParam;
 /**
  * 部署流程
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmDeployClassResourceForm extends BpmBaseParam {
 
@@ -23,6 +23,19 @@ public class BpmDeployClassResourceForm extends BpmBaseParam {
      * DeploymentBuilder addBytes(String resourceName, byte[] bytes);
      */
     String resource;
+
+    /**
+     * 流程类别
+     */
+    String category;
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
 
     public String getResource() {
         return resource;

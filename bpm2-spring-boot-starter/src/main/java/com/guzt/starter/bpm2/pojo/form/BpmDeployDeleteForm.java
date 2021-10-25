@@ -5,7 +5,7 @@ import com.guzt.starter.bpm2.pojo.BpmBaseParam;
 /**
  * 删除一个已经发布的流程定义
  *
- * @author <a href="mailto:guzhongtaoocp@126.com">guzhongtao</a>
+ * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
  */
 public class BpmDeployDeleteForm extends BpmBaseParam {
 
@@ -21,6 +21,19 @@ public class BpmDeployDeleteForm extends BpmBaseParam {
      * if there are still runtime or history process instances or jobs.
      */
     private boolean cascade = false;
+
+    /**
+     * 流程类别
+     */
+    String category;
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
 
     public String getDeployId() {
         return deployId;
