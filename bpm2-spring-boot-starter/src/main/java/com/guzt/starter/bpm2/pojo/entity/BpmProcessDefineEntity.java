@@ -5,7 +5,7 @@ import org.flowable.engine.RepositoryService;
 /**
  * 流程定义对象
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class BpmProcessDefineEntity extends BpmProcessBaseEty {
 

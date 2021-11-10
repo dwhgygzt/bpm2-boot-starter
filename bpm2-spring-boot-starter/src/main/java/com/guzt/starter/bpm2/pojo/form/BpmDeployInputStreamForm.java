@@ -7,7 +7,7 @@ import java.io.InputStream;
 /**
  * 部署流程
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class BpmDeployInputStreamForm extends BpmBaseParam {
 

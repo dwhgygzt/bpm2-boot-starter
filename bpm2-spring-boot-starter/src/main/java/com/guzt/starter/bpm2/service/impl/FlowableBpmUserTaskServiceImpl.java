@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
 /**
  * Flowable 6 - 任务管理
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
 public class FlowableBpmUserTaskServiceImpl implements BpmUserTaskService {

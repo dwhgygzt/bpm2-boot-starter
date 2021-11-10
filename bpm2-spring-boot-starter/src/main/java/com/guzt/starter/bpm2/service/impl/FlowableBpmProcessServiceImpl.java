@@ -1,6 +1,7 @@
 package com.guzt.starter.bpm2.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.StrUtil;
 import com.guzt.starter.bpm2.exception.BpmBusinessException;
 import com.guzt.starter.bpm2.pojo.context.HighlightColorContext;
 import com.guzt.starter.bpm2.pojo.dto.ParallelGatwayDTO;
@@ -45,7 +46,7 @@ import java.util.stream.Collectors;
 /**
  * Flowable 6 - 流程管理
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class FlowableBpmProcessServiceImpl implements BpmProcessService {
 
@@ -90,6 +91,9 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void deploy(BpmDeployBytesForm bytesForm) {
+        if (StrUtil.isBlank(bytesForm.getCategory())) {
+            bytesForm.setCategory("");
+        }
         processEngine.getProcessEngineConfiguration()
                 .getRepositoryService()
                 .createDeployment()
@@ -102,6 +106,9 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void deploy(BpmDeployClassResourceForm classResourceForm) {
+        if (StrUtil.isBlank(classResourceForm.getCategory())) {
+            classResourceForm.setCategory("");
+        }
         processEngine.getProcessEngineConfiguration()
                 .getRepositoryService()
                 .createDeployment()
@@ -114,6 +121,9 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void deploy(BpmDeployInputStreamForm inputStreamForm) {
+        if (StrUtil.isBlank(inputStreamForm.getCategory())) {
+            inputStreamForm.setCategory("");
+        }
         processEngine.getProcessEngineConfiguration()
                 .getRepositoryService()
                 .createDeployment()
@@ -126,6 +136,9 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
     @Override
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void deploy(BpmDeployTextForm textForm) {
+        if (StrUtil.isBlank(textForm.getCategory())) {
+            textForm.setCategory("");
+        }
         processEngine.getProcessEngineConfiguration()
                 .getRepositoryService()
                 .createDeployment()
@@ -209,13 +222,18 @@ public class FlowableBpmProcessServiceImpl implements BpmProcessService {
         } else {
             list = processDefinitionQuery.list();
         }
-
         if (!CollectionUtils.isEmpty(list)) {
-            Map<String, String> deploymentCategorys;
+            Map<String, String> deploymentCategorys = new HashMap<>(8);
             if (CollectionUtil.isEmpty(deployments)) {
                 deployments = deploymentQuery.list();
             }
-            deploymentCategorys = deployments.stream().collect(Collectors.toMap(Deployment::getId, Deployment::getCategory, (k1, k2) -> k1));
+            for (Deployment deployment : deployments) {
+                String category = deployment.getCategory();
+                if (category == null) {
+                    category = "";
+                }
+                deploymentCategorys.put(deployment.getId(), category);
+            }
             for (ProcessDefinition item : list) {
                 BpmProcessDefineEntity entity = new BpmProcessDefineEntity();
                 flowableDefinitionToBpmEntity(item, entity, deploymentCategorys);

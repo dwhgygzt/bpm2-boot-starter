@@ -5,7 +5,7 @@ import com.guzt.starter.bpm2.pojo.BpmBaseParam;
 /**
  * 部署流程
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class BpmDeployClassResourceForm extends BpmBaseParam {
 

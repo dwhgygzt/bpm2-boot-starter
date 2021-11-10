@@ -18,7 +18,7 @@ flowable 6.5.0 开始部分功能已经商业化了，为了稳妥起见，因�
 ```xml
 <!-- 对象存储通用接口 -->
 <dependency>
-    <groupId>com.middol</groupId>
+    <groupId>com.guzt</groupId>
     <artifactId>bpm2-spring-boot-starter</artifactId>
     <version>公司阿里云maven仓库中最新版本号</version>
 </dependency>
@@ -73,17 +73,17 @@ public class MyBusinessServiceImpl {
 
 ```java
 
-package com.middol.starter.bpm2.service;
+package com.guzt.starter.bpm2.service;
 
-import com.middol.starter.bpm2.pojo.dto.MultiInstanceUserDTO;
-import com.middol.starter.bpm2.pojo.entity.BpmTaskEntity;
-import com.middol.starter.bpm2.pojo.entity.BpmTaskModelEntity;
-import com.middol.starter.bpm2.pojo.form.BpmCommitForm;
-import com.middol.starter.bpm2.pojo.form.BpmJumpForm;
-import com.middol.starter.bpm2.pojo.form.BpmMultInstAddForm;
-import com.middol.starter.bpm2.pojo.form.BpmMultInstDeleteForm;
-import com.middol.starter.bpm2.pojo.query.BpmBackTaskModelQuery;
-import com.middol.starter.bpm2.pojo.query.BpmTaskQuery;
+import com.guzt.starter.bpm2.pojo.dto.MultiInstanceUserDTO;
+import com.guzt.starter.bpm2.pojo.entity.BpmTaskEntity;
+import com.guzt.starter.bpm2.pojo.entity.BpmTaskModelEntity;
+import com.guzt.starter.bpm2.pojo.form.BpmCommitForm;
+import com.guzt.starter.bpm2.pojo.form.BpmJumpForm;
+import com.guzt.starter.bpm2.pojo.form.BpmMultInstAddForm;
+import com.guzt.starter.bpm2.pojo.form.BpmMultInstDeleteForm;
+import com.guzt.starter.bpm2.pojo.query.BpmBackTaskModelQuery;
+import com.guzt.starter.bpm2.pojo.query.BpmTaskQuery;
 
 import java.util.List;
 import java.util.Set;

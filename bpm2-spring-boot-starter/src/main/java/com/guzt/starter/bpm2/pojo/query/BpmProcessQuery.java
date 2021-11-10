@@ -3,7 +3,7 @@ package com.guzt.starter.bpm2.pojo.query;
 /**
  * 查询流程
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class BpmProcessQuery extends BpmBasePageQuery {
 

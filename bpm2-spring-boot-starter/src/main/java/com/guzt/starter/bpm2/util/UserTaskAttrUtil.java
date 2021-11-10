@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * 扩展属性赋值
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class UserTaskAttrUtil {
     public static final String NODE_TYPE_KEY = "nodetype";

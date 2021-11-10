@@ -3,7 +3,7 @@ package com.guzt.starter.bpm2.exception;
 /**
  * 业务类异常
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class BpmBusinessException extends RuntimeException {
 

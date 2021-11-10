@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * 流程实例对象
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class BpmProcessInstanceEntity extends BpmProcessBaseEty {
 

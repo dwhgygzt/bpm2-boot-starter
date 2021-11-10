@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * 扩展 DefaultProcessDiagramGenerator
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class MyProcessDiagramGenerator extends DefaultProcessDiagramGenerator {
 

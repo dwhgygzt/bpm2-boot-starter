@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * 启动某个流程
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class BpmStartForm extends BpmBaseParam {
 

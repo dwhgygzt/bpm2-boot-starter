@@ -9,7 +9,7 @@ import java.awt.geom.RoundRectangle2D;
 /**
  * 扩展 DefaultProcessDiagramGenerator
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class MyProcessDiagramCanvas extends DefaultProcessDiagramCanvas {
 

@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * 流程管理
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public interface BpmProcessService {
 

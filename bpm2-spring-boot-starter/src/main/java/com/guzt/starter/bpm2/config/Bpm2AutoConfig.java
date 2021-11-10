@@ -25,7 +25,7 @@ import javax.sql.DataSource;
 /**
  * BPM 相关配置
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 @Configuration
 @EnableConfigurationProperties({Bpn2Properties.class})

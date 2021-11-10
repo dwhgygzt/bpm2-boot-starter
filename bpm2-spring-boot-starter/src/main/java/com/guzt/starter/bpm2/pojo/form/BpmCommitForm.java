@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * 暂停某一个流程
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class BpmCommitForm extends BpmBaseParam {
 

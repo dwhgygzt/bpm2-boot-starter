@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * 流程跳转（适用于选择历史任务步骤驳回场景，跳转指定任务，并行网关跳转）
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class BpmJumpForm extends BpmBaseParam {
 

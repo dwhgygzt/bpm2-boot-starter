@@ -8,7 +8,7 @@ import java.awt.*;
 /**
  * 操作日志id 上下文
  *
- * @author <a href="mailto:guzhongtao@middol.com">guzhongtao</a>
+ * @author guzt
  */
 public class HighlightColorContext implements AutoCloseable {
 
